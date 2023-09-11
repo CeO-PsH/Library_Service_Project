@@ -1,9 +1,7 @@
 from django.db import models
 
-from Library_Service_Project import settings
 
-
-class BookModel(models.Model):
+class Books(models.Model):
     class Enum(models.TextChoices):
         HARD = "HARD"
         SOFT = "SOFT"
