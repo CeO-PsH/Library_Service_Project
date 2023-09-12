@@ -59,9 +59,8 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
         book = Books.objects.get(id=int(data['book']))
         book.inventory -= 1
         book.save()
-        send_to_telegram(f"Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}")
         serializer.save(user=self.request.user)
-        v = 1
+        send_to_telegram(f"Borrowing №: {serializer.data['id']} Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}")
 
 @api_view(["POST", "GET"])
 def  return_borrowing(request: Request, pk) -> Response:
