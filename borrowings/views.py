@@ -1,4 +1,5 @@
 from rest_framework import mixins
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
 from books.models import Books
@@ -6,16 +7,13 @@ from borrowings.models import Borrowing
 from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingCreateSerializer,
-    BorrowingSerializer,
-    BorrowingDetailSerializer,
+    BorrowingSerializer, BorrowingDetailSerializer,
 )
 
 
 class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, GenericViewSet):
     queryset = Borrowing.objects.all()
-    serializer_class = BorrowingListSerializer
-
-
+    permission_classes = (IsAuthenticated, )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -24,6 +22,7 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
             return BorrowingDetailSerializer
         if self.action == "create":
             return BorrowingCreateSerializer
+
 
         return BorrowingSerializer
 
