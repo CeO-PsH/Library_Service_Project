@@ -12,6 +12,7 @@ class Borrowing(models.Model):
     user =  models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
+    is_active = models.BooleanField(default=True, null=False)
 
     class Meta:
         models.UniqueConstraint(
