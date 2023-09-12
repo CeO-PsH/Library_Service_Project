@@ -1,5 +1,13 @@
-from rest_framework import mixins
+from datetime import datetime
+
+from django.db import transaction
+from django.db.models import F
+from rest_framework import mixins, status
+from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from books.models import Books
@@ -9,7 +17,7 @@ from borrowings.serializers import (
     BorrowingCreateSerializer,
     BorrowingSerializer, BorrowingDetailSerializer,
 )
-
+from .send_messege_to_telegram import  send_to_telegram
 
 class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, GenericViewSet):
     queryset = Borrowing.objects.all()
@@ -51,4 +59,18 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
         book = Books.objects.get(id=book_get)
         book.inventory -= 1
         book.save()
+
         serializer.save(user=self.request.user)
+
+@api_view(["POST", "GET"])
+def  return_borrowing(request: Request, pk) -> Response:
+    with transaction.atomic():
+        borrowing = get_object_or_404(Borrowing, id=pk)
+        if borrowing.is_active:
+            borrowing.book.inventory += 1
+            borrowing.actual_return_date = datetime.now()
+            borrowing.is_active = False
+            borrowing.save()
+            serializer = BorrowingDetailSerializer(borrowing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"detail": "The book has already been returned."}, status=status.HTTP_400_BAD_REQUEST)
