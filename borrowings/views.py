@@ -15,6 +15,26 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
     queryset = Borrowing.objects.all()
     permission_classes = (IsAuthenticated, )
 
+    @staticmethod
+    def _params_to_ints(qs):
+        """Converts a list of string IDs to a list of integers"""
+        return [int(str_id) for str_id in qs.split(",")]
+
+    def get_queryset(self):
+        is_active = self.request.query_params.get("is_active")
+        if self.request.user.is_staff:
+            queryset = self.queryset
+            user = self.request.query_params.get("user_id")
+            if user:
+                actors_ids = self._params_to_ints(user)
+                queryset = queryset.filter(user__id__in=actors_ids)
+        else:
+            queryset = Borrowing.objects.filter(user=self.request.user)
+
+        if is_active:
+            return queryset.filter(is_active=is_active)
+        return queryset
+
     def get_serializer_class(self):
         if self.action == "list":
             return BorrowingListSerializer
