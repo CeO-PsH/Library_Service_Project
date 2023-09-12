@@ -6,3 +6,4 @@ class IsAdminOrReadOnly(BasePermission):
         return bool(
                 request.method in SAFE_METHODS or request.user.is_staff
             )
+
