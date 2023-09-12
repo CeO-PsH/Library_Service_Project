@@ -55,12 +55,13 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
         return BorrowingSerializer
 
     def perform_create(self, serializer):
-        book_get = self.request.data.get("book", None)
-        book = Books.objects.get(id=book_get)
+        data = self.request.data
+        book = Books.objects.get(id=int(data['book']))
         book.inventory -= 1
         book.save()
-
+        send_to_telegram(f"Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}")
         serializer.save(user=self.request.user)
+        v = 1
 
 @api_view(["POST", "GET"])
 def  return_borrowing(request: Request, pk) -> Response:
@@ -72,5 +73,6 @@ def  return_borrowing(request: Request, pk) -> Response:
             borrowing.is_active = False
             borrowing.save()
             serializer = BorrowingDetailSerializer(borrowing)
+            send_to_telegram(f"Borrowing №: {borrowing.id}, Title: {borrowing.book} was returned at: {borrowing.actual_return_date}")
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({"detail": "The book has already been returned."}, status=status.HTTP_400_BAD_REQUEST)
