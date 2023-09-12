@@ -13,7 +13,7 @@ class Books(models.Model):
         choices=Enum.choices,
         default=Enum.HARD
     )
-    inventory = models.IntegerField(unique=True)
+    inventory = models.IntegerField()
     daily_fee = models.DecimalField(max_digits=8, decimal_places=2)
 
     def __str__(self):
