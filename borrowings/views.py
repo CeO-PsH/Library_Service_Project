@@ -1,7 +1,6 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 from django.db import transaction
-from django.db.models import F
 from rest_framework import mixins, status
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
