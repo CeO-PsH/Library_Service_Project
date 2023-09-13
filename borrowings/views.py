@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime
 
 from django.db import transaction
 from rest_framework import mixins, status
@@ -10,11 +10,15 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from books.models import Books
-from borrowings.models import Borrowing
+from borrowings.models import Borrowing, Payment
 from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingCreateSerializer,
-    BorrowingSerializer, BorrowingDetailSerializer,
+    BorrowingSerializer,
+    BorrowingDetailSerializer,
+    PaymentsListSerializer,
+    PaymentsDetailSerializer,
+    PaymentsSerializer,
 )
 from .send_messege_to_telegram import  send_to_telegram
 
@@ -74,3 +78,20 @@ def  return_borrowing(request: Request, pk) -> Response:
             send_to_telegram(f"Borrowing №: {borrowing.id}, Title: {borrowing.book} was returned at: {borrowing.actual_return_date}")
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({"detail": "The book has already been returned."}, status=status.HTTP_400_BAD_REQUEST)
+
+class PaymentsViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, GenericViewSet):
+    queryset = Payment.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_staff is False:
+             queryset = self.queryset.filter(borrowing__user=self.request.user)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return PaymentsListSerializer
+        if self.action == "retrieve":
+            return PaymentsDetailSerializer
+        return PaymentsSerializer
+
