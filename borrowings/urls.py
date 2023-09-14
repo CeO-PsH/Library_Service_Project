@@ -13,7 +13,7 @@ from borrowings.views import (
 
 app_name = "borrowing"
 router = routers.DefaultRouter()
-router.register("borrowings", BorrowingListViewSet)
+router.register("", BorrowingListViewSet)
 router.register("payments", PaymentsViewSet)
 
 urlpatterns = [

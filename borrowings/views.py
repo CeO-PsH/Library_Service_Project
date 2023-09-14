@@ -7,6 +7,7 @@ from django.db import transaction
 from django.http import request, HttpResponse
 from django.http.request import HttpRequest
 from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import mixins, status
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404, redirect
@@ -75,7 +76,7 @@ class BorrowingListViewSet(
             book.inventory -= 1
             book.save()
             serializer.save(user=self.request.user)
-            create_checkout_session(serializer.data["id"])
+            create_checkout_session(serializer.data["id"], type_="PAYMENT")
             send_to_telegram(
                 f"Borrowing №: {serializer.data['id']} Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}"
             )
@@ -87,10 +88,13 @@ def return_borrowing(request: Request, pk) -> Response:
         borrowing = get_object_or_404(Borrowing, id=pk)
         if borrowing.is_active:
             borrowing.book.inventory += 1
-            borrowing.actual_return_date = datetime.now()
+            borrowing.actual_return_date = datetime.fromisoformat("2023-09-18")
+            aware_actual_return_date = timezone.make_aware(borrowing.actual_return_date)
             borrowing.is_active = False
             borrowing.save()
             serializer = BorrowingDetailSerializer(borrowing)
+            if aware_actual_return_date > borrowing.expected_return_date:
+                create_checkout_session(borrowing.pk, type_="FINE")
             send_to_telegram(
                 f"Borrowing №: {borrowing.id}, Title: {borrowing.book} was returned at: {borrowing.actual_return_date}"
             )
@@ -123,19 +127,25 @@ class PaymentsViewSet(
         return PaymentsSerializer
 
 
-def calculate_price(pk):
+def calculate_price(pk, type_):
     borrowing = Borrowing.objects.get(id=pk)
     price = borrowing.book.daily_fee
-    borrowing_date = borrowing.borrow_date
     expected_return_date = borrowing.expected_return_date
-    delta = expected_return_date - borrowing_date
-    number_of_days = delta.days
-    return number_of_days * price
+    if type_ == "PAYMENT":
+        actual_date = borrowing.borrow_date
+        delta = expected_return_date - actual_date
+        number_of_days = delta.days
+        return number_of_days * price * 100
+    elif type_ == "FINE":
+        actual_date = borrowing.actual_return_date
+        delta = actual_date - expected_return_date
+        number_of_days = delta.days
+        return number_of_days * price * 2 * 100
 
 
-def create_checkout_session(pk):
+def create_checkout_session(pk, type_):
     borrowing = Borrowing.objects.get(id=pk)
-    price = calculate_price(pk) * 100
+    price = calculate_price(pk, type_)
     LOCAL_DOMAIN = "http://127.0.0.1:8000/"
     try:
         stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
@@ -162,6 +172,7 @@ def create_checkout_session(pk):
             borrowing=borrowing,
             session_url=checkout_session.url,
             session_id=checkout_session.stripe_id,
+            type=type_,
             money_to_pay=checkout_session.amount_total,
         )
     except Exception as e:
@@ -173,6 +184,9 @@ def order_success(request):
     payment = Payment.objects.get(session_id=session.stripe_id)
     payment.status = "PAID"
     payment.save()
+    send_to_telegram(
+        f"Payment №{payment.id}, Payment type: {payment.type}, Amount: {payment.money_to_pay} result: Success"
+    )
     return redirect("http://127.0.0.1:8000/api/borrowings/borrowing/")
 
 @api_view(["GET"])
