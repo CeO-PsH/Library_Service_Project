@@ -2,7 +2,12 @@ from django.urls import path, include
 from rest_framework import routers
 
 
-from borrowings.views import BorrowingListViewSet, return_borrowing, PaymentsViewSet
+from borrowings.views import (
+    BorrowingListViewSet,
+    return_borrowing,
+    PaymentsViewSet,
+    #create_checkout_session,
+)
 
 app_name = "borrowing"
 router = routers.DefaultRouter()
@@ -11,5 +16,6 @@ router.register("payments", PaymentsViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("<int:pk>/return/", return_borrowing, name="return")
+    path("<int:pk>/return/", return_borrowing, name="return"),
+
 ]

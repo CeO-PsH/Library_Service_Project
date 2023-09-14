@@ -1,14 +1,19 @@
+import os
 from datetime import datetime
 
+import stripe
 from django.db import transaction
+from django.http import JsonResponse, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import mixins, status
 from rest_framework.decorators import api_view
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from Library_Service_Project import settings
 from books.models import Books
 from borrowings.models import Borrowing, Payment
 from borrowings.serializers import (
@@ -58,12 +63,14 @@ class BorrowingListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mix
         return BorrowingSerializer
 
     def perform_create(self, serializer):
-        data = self.request.data
-        book = Books.objects.get(id=int(data['book']))
-        book.inventory -= 1
-        book.save()
-        serializer.save(user=self.request.user)
-        send_to_telegram(f"Borrowing №: {serializer.data['id']} Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}")
+        with transaction.atomic():
+            data = self.request.data
+            book = Books.objects.get(id=int(data['book']))
+            book.inventory -= 1
+            book.save()
+            serializer.save(user=self.request.user)
+            create_checkout_session(serializer.data['id'])
+            send_to_telegram(f"Borrowing №: {serializer.data['id']} Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}")
 
 @api_view(["POST", "GET"])
 def  return_borrowing(request: Request, pk) -> Response:
@@ -95,3 +102,46 @@ class PaymentsViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.C
             return PaymentsDetailSerializer
         return PaymentsSerializer
 
+
+def calculate_price(pk):
+    borrowing = Borrowing.objects.get(id=pk)
+    price = borrowing.book.daily_fee
+    borrowing_date = borrowing.borrow_date
+    expected_return_date = borrowing.expected_return_date
+    delta = expected_return_date - borrowing_date
+    number_of_days = delta.days
+    return number_of_days * price
+
+
+def create_checkout_session(pk):
+    borrowing = Borrowing.objects.get(id=pk)
+    price = calculate_price(pk) * 100
+    LOCAL_DOMAIN = "http://127.0.0.1:8000/"
+    try:
+        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    "price_data": {
+                     "currency": "usd",
+                        "unit_amount_decimal": price,
+                        'product_data': {
+                            'name': borrowing.book.title,
+                            'description': f"Author: {borrowing.book.author} "
+                        },
+                    },
+                    "quantity": 1,
+                }
+            ],
+             mode='payment',
+            success_url=LOCAL_DOMAIN + 'borrowings/success/',
+            cancel_url=LOCAL_DOMAIN + 'borrowings/cancel/',
+        )
+        Payment.objects.create(
+            borrowing=borrowing,
+            session_url=checkout_session.url,
+            session_id=checkout_session.stripe_id,
+            money_to_pay=checkout_session.amount_total
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
