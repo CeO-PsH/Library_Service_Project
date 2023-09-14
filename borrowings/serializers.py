@@ -18,23 +18,12 @@ class BorrowingSerializer(serializers.ModelSerializer):
         model = Borrowing
         fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book",)
 
-class BorrowingListSerializer(BorrowingSerializer):
-    book = serializers.StringRelatedField(many=False)
 
-    class Meta:
-        model = Borrowing
-        fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book", "is_active")
 
 class BorrowingCreateSerializer(BorrowingSerializer):
     class Meta:
         model = Borrowing
         fields = ("id","borrow_date", "expected_return_date", "book",)
-
-class BorrowingDetailSerializer(BorrowingSerializer):
-    book = BooksSerializer(many=False, read_only=True)
-    class Meta:
-        model = Borrowing
-        fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book", "user" ,)
 
 class PaymentsSerializer(serializers.ModelSerializer):
 
@@ -42,12 +31,27 @@ class PaymentsSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ("id", "status", "type", "borrowing", "session_url", "session_url", "session_id", "money_to_pay",)
 
+
 class PaymentsListSerializer(PaymentsSerializer):
-    user = serializers.CharField(source="borrowing.user.is_staff")
 
     class Meta:
         model = Payment
-        fields = ("id", "status", "type", "borrowing", "session_url", "session_url", "session_id", "money_to_pay", "user")
+        fields = ("id", "status", "type", "borrowing", "session_url", "session_url", "session_id", "money_to_pay",)
+
+class BorrowingDetailSerializer(BorrowingSerializer):
+    book = BooksSerializer(many=False, read_only=True)
+    payments = PaymentsListSerializer(many=True, read_only=True)
+    class Meta:
+        model = Borrowing
+        fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book", "user", "payments")
+
+class BorrowingListSerializer(BorrowingSerializer):
+    book = serializers.StringRelatedField(many=False)
+    payments = serializers.StringRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Borrowing
+        fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book", "is_active", "payments")
 
 class PaymentsDetailSerializer(PaymentsSerializer):
     borrowing = BorrowingDetailSerializer(many=False, read_only=True)
