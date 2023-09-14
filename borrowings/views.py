@@ -178,6 +178,7 @@ def create_checkout_session(pk, type_):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 @api_view(["GET"])
 def order_success(request):
     session = stripe.checkout.Session.retrieve(request.query_params["session_id"])
@@ -188,6 +189,7 @@ def order_success(request):
         f"Payment №{payment.id}, Payment type: {payment.type}, Amount: {payment.money_to_pay} result: Success"
     )
     return redirect("http://127.0.0.1:8000/api/borrowings/borrowing/")
+
 
 @api_view(["GET"])
 def order_canceled(request):
