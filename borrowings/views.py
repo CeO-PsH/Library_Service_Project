@@ -1,12 +1,10 @@
 import os
 from datetime import datetime
 
-import requests
+
 import stripe
 from django.db import transaction
 from django.http import request, HttpResponse
-from django.http.request import HttpRequest
-from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import mixins, status
 from rest_framework.decorators import api_view

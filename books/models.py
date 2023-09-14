@@ -8,11 +8,7 @@ class Books(models.Model):
 
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    cover = models.CharField(
-        max_length=5,
-        choices=Enum.choices,
-        default=Enum.HARD
-    )
+    cover = models.CharField(max_length=5, choices=Enum.choices, default=Enum.HARD)
     inventory = models.IntegerField()
     daily_fee = models.DecimalField(max_digits=8, decimal_places=2)
 

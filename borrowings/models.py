@@ -4,20 +4,19 @@ from rest_framework.exceptions import ValidationError
 from Library_Service_Project import settings
 from books.models import Books
 
+
 class Borrowing(models.Model):
     borrow_date = models.DateTimeField(auto_now=True)
     expected_return_date = models.DateTimeField(auto_now=False)
     actual_return_date = models.DateTimeField(auto_now=False, blank=True, null=True)
     book = models.ForeignKey(Books, related_name="borrowings", on_delete=models.CASCADE)
-    user =  models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True, null=False)
 
     class Meta:
         models.UniqueConstraint(
             fields=["borrow_date", "expected_return_date", "actual_return_date"],
-            name="unique date"
+            name="unique date",
         )
 
     @staticmethod
@@ -28,8 +27,7 @@ class Borrowing(models.Model):
             if inventory_attr_value <= 0:
                 raise error_to_raise(
                     {
-                        inventory_attr_name:
-                            f" The {inventory_attr_name} of inventory items must be greater than 0."
+                        inventory_attr_name: f" The {inventory_attr_name} of inventory items must be greater than 0."
                     }
                 )
 
@@ -54,17 +52,23 @@ class Borrowing(models.Model):
     def __str__(self):
         return f"Borrow date: {self.borrow_date}, Book: {self.book.title}, User: {self.user}"
 
+
 class Payment(models.Model):
     class Status(models.TextChoices):
-        PENDING  = "PENDING "
+        PENDING = "PENDING "
         PAID = "PAID"
 
     class Type(models.TextChoices):
-        PAYMENT   = "PAYMENT"
+        PAYMENT = "PAYMENT"
         FINE = "FINE"
-    status = models.CharField(max_length=25, choices=Status.choices, default=Status.PENDING)
-    type =  models.CharField(max_length=25, choices=Type.choices, default=Type.PAYMENT)
-    borrowing = models.ForeignKey(Borrowing, related_name="payments", on_delete=models.CASCADE)
+
+    status = models.CharField(
+        max_length=25, choices=Status.choices, default=Status.PENDING
+    )
+    type = models.CharField(max_length=25, choices=Type.choices, default=Type.PAYMENT)
+    borrowing = models.ForeignKey(
+        Borrowing, related_name="payments", on_delete=models.CASCADE
+    )
     session_url = models.URLField()
     session_id = models.CharField(max_length=255)
     money_to_pay = models.DecimalField(max_digits=8, decimal_places=2)
