@@ -8,7 +8,6 @@ from borrowings.views import (
     PaymentsViewSet,
     order_success,
     order_canceled,
-    # create_checkout_session,
 )
 
 app_name = "borrowing"
