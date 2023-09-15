@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -6,7 +8,7 @@ from books.serializers import BooksSerializer
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> Any:
         data = super(BorrowingSerializer, self).validate(attrs=attrs)
         Borrowing.validate_inventory(attrs["book"].inventory, ValidationError)
         return data

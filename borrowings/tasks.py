@@ -14,7 +14,9 @@ def send_message_about_borrowing_books() -> None:
     if len(borrowing_book) > 0:
         for book in borrowing_book:
             send_to_telegram(
-                f"Title: {book.book.title}, expected return date: {book.expected_return_date}, Customer{book.user.id}"
+                f"Title: {book.book.title},"
+                f" expected return date: {book.expected_return_date},"
+                f" Customer{book.user.id}"
             )
     else:
         send_to_telegram("No borrowings overdue today!")

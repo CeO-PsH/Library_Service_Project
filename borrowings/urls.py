@@ -18,7 +18,11 @@ router.register("payments", PaymentsViewSet)
 urlpatterns = [
 
     path("", include(router.urls)),
-    path("<int:pk>/return_borrowing/", return_borrowing, name="return_borrowing"),
+    path(
+        "<int:pk>/return_borrowing/",
+        return_borrowing,
+        name="return_borrowing"
+    ),
     path("success", order_success),
     path("canceled/", order_canceled),
 ]
