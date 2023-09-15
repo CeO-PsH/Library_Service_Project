@@ -76,6 +76,19 @@ class BorrowingListViewSet(
 
         return BorrowingSerializer
 
+    @extend_schema(
+        request=BorrowingCreateSerializer,
+        responses={status.HTTP_201_CREATED: BorrowingSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
     def perform_create(self, serializer):
         with transaction.atomic():
             data = self.request.data
@@ -88,8 +101,27 @@ class BorrowingListViewSet(
                 f"Borrowing №: {serializer.data['id']} Title: {book.title} Borrowing at:{datetime.now()}. Expected return date: {data['expected_return_date']}"
             )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="is_active",
+                description="Filter by active borrowing",
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="user_id",
+                description="filter to admin user, users by id",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+        ]
+    )
+    def list(self, request):
+        """List borrowing with filter by is active or not for all users, and filtering by user id only for admin users"""
+        return super().list(request)
 
-@api_view(["POST", "GET"])
+
+@extend_schema(responses={status.HTTP_200_OK: BorrowingDetailSerializer})
+@api_view(["POST"])
 def return_borrowing(request: Request, pk) -> Response:
     with transaction.atomic():
         borrowing = get_object_or_404(Borrowing, id=pk)
@@ -187,6 +219,10 @@ def create_checkout_session(pk, type_):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(
+    description="this method redirect to borrowings list, after success paid",
+    methods=["GET"],
+)
 @api_view(["GET"])
 def order_success(request):
     session = stripe.checkout.Session.retrieve(request.query_params["session_id"])
@@ -199,6 +235,10 @@ def order_success(request):
     return redirect("borrowing:borrowing-list")
 
 
+@extend_schema(
+    description="order canceled, if customer don`t want continue paid, this method redirect to page",
+    methods=["GET"],
+)
 @api_view(["GET"])
 def order_canceled(request):
     cancel_message = "Payment can be paid a bit later, but the session is available for only 24 hours."
