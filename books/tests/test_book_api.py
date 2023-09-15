@@ -1,6 +1,3 @@
-import tempfile
-import os
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -12,7 +9,6 @@ from books.models import Books
 from books.serializers import BooksSerializer
 
 BOOK_URL = reverse("books:books-list")
-
 
 
 def sample_book(**params):
@@ -27,7 +23,6 @@ def sample_book(**params):
     return Books.objects.create(**defaults)
 
 
-
 def detail_url(book_id):
     return reverse("books:books-detail", args=[book_id])
 
@@ -36,7 +31,7 @@ class UnauthenticatedBookApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_unauthenticated_required(self):
+    def test_unauthenticated_required_book(self):
         res = self.client.get(BOOK_URL)
         book = Books.objects.order_by("id")
         serializer = BooksSerializer(book, many=True)
@@ -76,7 +71,6 @@ class AuthenticatedBooksApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
-
 
     def test_retrieve_book_detail(self):
         book = sample_book()
@@ -126,10 +120,8 @@ class AuthenticatedBooksApiTests(TestCase):
 
     def test_book_str(self):
         book = sample_book()
-        self.assertEqual(
-            str(book),
-            "Sample book, Author: Sample Author"
-        )
+        self.assertEqual(str(book), "Sample book, Author: Sample Author")
+
 
 class AdminBooksApiTests(TestCase):
     def setUp(self):
@@ -154,9 +146,7 @@ class AdminBooksApiTests(TestCase):
         for key in payload.keys():
             self.assertEqual(payload[key], getattr(book, key))
 
-
-
-    def test_put_movie_allowed(self):
+    def test_put_book_allowed(self):
         payload = {
             "title": "Sample book",
             "author": "Sample Author",
