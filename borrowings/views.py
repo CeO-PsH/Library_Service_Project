@@ -81,13 +81,12 @@ class BorrowingListViewSet(
         responses={status.HTTP_201_CREATED: BorrowingSerializer},
     )
     def create(self, request, *args, **kwargs):
+        """Create borrowing with change of book inventory"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         with transaction.atomic():
@@ -220,7 +219,7 @@ def create_checkout_session(pk, type_):
 
 
 @extend_schema(
-    description="this method redirect to borrowings list, after success paid",
+    description="this method redirect to borrowings list, check successful stripe payment",
     methods=["GET"],
 )
 @api_view(["GET"])
@@ -236,7 +235,7 @@ def order_success(request):
 
 
 @extend_schema(
-    description="order canceled, if customer don`t want continue paid, this method redirect to page",
+    description="return payment paused message , if customer don`t want continue paid, this method redirect to page",
     methods=["GET"],
 )
 @api_view(["GET"])
