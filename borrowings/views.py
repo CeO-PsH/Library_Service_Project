@@ -12,7 +12,6 @@ from rest_framework import mixins, status
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -125,10 +124,13 @@ def return_borrowing(request: Request, pk) -> Response:
     with transaction.atomic():
         borrowing = get_object_or_404(Borrowing, id=pk)
         if borrowing.is_active:
-            borrowing.book.inventory += 1
+            book = borrowing.book
+            book.inventory += 1
+            book.save()
             borrowing.actual_return_date = datetime.now()
             aware_actual_return_date = timezone.make_aware(borrowing.actual_return_date)
             borrowing.is_active = False
+
             borrowing.save()
             serializer = BorrowingDetailSerializer(borrowing)
             if aware_actual_return_date > borrowing.expected_return_date:
@@ -196,7 +198,7 @@ def create_checkout_session(pk, type_):
                         "unit_amount_decimal": price,
                         "product_data": {
                             "name": borrowing.book.title,
-                            "description": f"Author: {borrowing.book.author} ",
+                            "description": f"Author: {borrowing.book.author}",
                         },
                     },
                     "quantity": 1,
