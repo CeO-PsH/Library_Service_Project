@@ -28,7 +28,7 @@ def sample_book(**params):
 def sample_borrowing(**params):
     book = sample_book()
     defaults = {
-        "borrow_date": "2023-09-10T15:39:57.710Z",
+        "borrow_date": datetime.now(),
         "expected_return_date": datetime.now() + timedelta(days=2),
         "book": book,
         "is_active": True,
@@ -132,6 +132,10 @@ class AuthenticatedBorrowingApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_borrowing_str(self):
+        user = self.user
+        borrowing = sample_borrowing(user=user)
+        self.assertEqual(str(borrowing), f"Borrow date: {borrowing.borrow_date}, Book: {borrowing.book.title}, User: {borrowing.user}")
 
     def test_return_borrowing(self):
         user = self.user

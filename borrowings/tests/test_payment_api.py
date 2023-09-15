@@ -114,8 +114,13 @@ class AuthenticatedPaymentApiTests(TestCase):
         }
         res = self.client.post(PAYMENT_URL, payload)
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_payment_str(self):
+        user = self.user
+        borrowing = sample_borrowing(user=user)
+        payment = sample_payment(borrowing=borrowing)
+        self.assertEqual(str(payment), "1.Status: PENDING, Type:PAYMENT, Money to pay: 1000 USD")
 
     @patch("borrowings.views.stripe.checkout.Session.create")
     def test_create_checkout_session_with_status_pending(self, mock_checkout_session):
