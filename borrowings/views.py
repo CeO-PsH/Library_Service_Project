@@ -6,9 +6,12 @@ import stripe
 from django.db import transaction
 from django.http import request, HttpResponse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, status
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404, redirect
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,6 +31,12 @@ from borrowings.serializers import (
 from .send_messege_to_telegram import send_to_telegram
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 10
+
+
 class BorrowingListViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -35,7 +44,7 @@ class BorrowingListViewSet(
     GenericViewSet,
 ):
     queryset = Borrowing.objects.all()
-    permission_classes = (IsAuthenticated,)
+    pagination_class = StandardResultsSetPagination
 
     @staticmethod
     def _params_to_ints(qs):
@@ -110,6 +119,7 @@ class PaymentsViewSet(
     GenericViewSet,
 ):
     queryset = Payment.objects.all()
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = self.queryset
@@ -186,7 +196,7 @@ def order_success(request):
     send_to_telegram(
         f"Payment №{payment.id}, Payment type: {payment.type}, Amount: {payment.money_to_pay} result: Success"
     )
-    return redirect("http://127.0.0.1:8000/api/borrowings/borrowing/")
+    return redirect("borrowing:borrowing-list")
 
 
 @api_view(["GET"])
