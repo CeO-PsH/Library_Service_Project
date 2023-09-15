@@ -42,7 +42,7 @@ class BorrowingListViewSet(
     mixins.CreateModelMixin,
     GenericViewSet,
 ):
-    queryset = Borrowing.objects.all()
+    queryset = Borrowing.objects.all().select_related("book",).prefetch_related("payments")
     pagination_class = StandardResultsSetPagination
 
     @staticmethod
@@ -148,7 +148,6 @@ def return_borrowing(request: Request, pk) -> Response:
 class PaymentsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
     GenericViewSet,
 ):
     queryset = Payment.objects.all()
