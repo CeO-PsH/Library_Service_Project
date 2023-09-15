@@ -86,7 +86,7 @@ def return_borrowing(request: Request, pk) -> Response:
         borrowing = get_object_or_404(Borrowing, id=pk)
         if borrowing.is_active:
             borrowing.book.inventory += 1
-            borrowing.actual_return_date = datetime.fromisoformat("2023-09-18")
+            borrowing.actual_return_date = datetime.now()
             aware_actual_return_date = timezone.make_aware(borrowing.actual_return_date)
             borrowing.is_active = False
             borrowing.save()
