@@ -10,5 +10,5 @@ def send_to_telegram(message: str) -> None:
 
     try:
         requests.post(apiURL, json={"chat_id": chatID, "text": message})
-    except Exception as e:
-        print(e)
+    except Exception as error:
+        print(error)

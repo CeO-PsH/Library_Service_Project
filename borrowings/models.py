@@ -9,9 +9,8 @@ from books.models import Books
 
 class Borrowing(models.Model):
     borrow_date = models.DateTimeField(auto_now=True)
-    expected_return_date = models.DateTimeField(auto_now=False)
+    expected_return_date = models.DateTimeField()
     actual_return_date = models.DateTimeField(
-        auto_now=False,
         blank=True,
         null=True
     )

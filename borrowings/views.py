@@ -4,7 +4,7 @@ from typing import Type
 
 import stripe
 from django.db import transaction
-from django.http import request, HttpResponse
+from django.http import  HttpResponse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -27,7 +27,7 @@ from borrowings.serializers import (
     PaymentsDetailSerializer,
     PaymentsSerializer,
 )
-from .send_messege_to_telegram import send_to_telegram
+from .notification import send_to_telegram
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -52,9 +52,9 @@ class BorrowingListViewSet(
     pagination_class = StandardResultsSetPagination
 
     @staticmethod
-    def _params_to_ints(qs: list) -> list:
+    def _params_to_ints(queryset: list) -> list:
         """Converts a list of string IDs to a list of integers"""
-        return [int(str_id) for str_id in qs.split(",")]
+        return [int(str_id) for str_id in queryset.split(",")]
 
     def get_queryset(self) -> QuerySet[Borrowing]:
         is_active = self.request.query_params.get("is_active")
