@@ -84,3 +84,6 @@ pythone manage.py runserver
 This modernization project will significantly enhance the efficiency and convenience of the city library, benefiting both patrons and staff.
 
 The project is built using Django and Django REST framework and utilizes the drf-spectacular extension for automated OpenAPI documentation generation. Various libraries and packages are used to simplify web application development.
+![swagger_image_1.png](swagger_image_1.png)
+![swagger_image_2.png](swagger_image_2.png)
+![swagger_image_3.png](swagger_image_3.png)

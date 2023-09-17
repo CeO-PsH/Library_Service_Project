@@ -2,7 +2,7 @@ from borrowings.models import Borrowing
 
 from celery import shared_task
 from datetime import date, timedelta
-from borrowings.send_messege_to_telegram import send_to_telegram
+from borrowings.notification import send_to_telegram
 
 
 @shared_task
